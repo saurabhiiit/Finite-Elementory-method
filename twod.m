@@ -2,7 +2,7 @@ clc
 clear all
 
 l = input('Enter the total length of the element: ');
-b = input('Enter the total breadth of the element: ');
+%b = input('Enter the total breadth of the element: ');
 t = input('Enter the thickness of the element: ');
 
 nx = input('Enter the total number of division along x axis of the element: ');
@@ -14,8 +14,23 @@ mu = input('Enter the poison ratio of the element: ');
 px = input('Enter the x coordinate of the point: ');
 py = input('Enter the y coordinate of the point: ');
 
-% ele = ((ny+1)*nx)+((nx+1)*ny)+(ny*nx);
-% node = ((ny+1)*nx)+((nx+1)*ny);  
+%% Boundary condition
+nf = input('Enter the number of node fixed: ');
+q = ones(2*(nx+1)*(ny+1),1);
+for i = 1:nf
+    nfn = input('Enter the node number which is fixed: ');
+    q((2*nfn -1),1) = 0;
+    q((2*nfn),1) = 0; 
+end
+
+%% Loading
+nl = input('Enter the number of load acting: ');
+load = zeros(2*(nx+1)*(ny+1),1);
+for i = 1:nl
+    nnla = input('Enter the node where load is acting: ');
+    load((2*nnla)-1,1) = input('Enter the amount of horizontal force acting at that node ');
+    load(2*nnla,1) = input('Enter the amount of vertical force acting at that node ');
+end
 
 %% Element connectivity matrix
 
@@ -64,6 +79,7 @@ a = 0;
 b = 0;
 count1 = 0;
 node = (nx+1)*(ny+1);
+nodal= [];
 for i = 1:node
     nodal(i,1) = a;
     nodal(i,2) = b;
@@ -75,34 +91,6 @@ for i = 1:node
         count1 = 0 ;
     end
 end
-%%
-% if(py - floor(py)==0)
-%     p1y = floor(py) - 1;
-% else
-%     p1y = floor(py);
-% end
-% p2y = py - floor(py);
-% p2x = px - floor(px);
-% % if(px-floor(px)>0.5)
-% %     
-% %     p1x = round(px);
-% %     eleno = (2*p1x)+(p1y*8);
-% % else
-% %     p1x = floor(px+0.49);
-% %     eleno = (2*p1x) + 1+(p1y*8);
-% % end
-% if(p2x+p2y<=1)
-%     
-%     p1x = floor(px);
-%     disp('huray1');
-%     eleno = (2*p1x)+1+(p1y*8);
-% else
-% %     p1x = floor(px+0.49);
-%     p1x = round(px);
-%     disp('huray');
-%     eleno = (2*p1x) + 2 +(p1y*8);
-% end
-% disp(eleno);
 
 for i = 1:2*nx*ny
     x1 = nodal(element(i,1),1);
@@ -138,3 +126,95 @@ A = 0.5;
 B = 1/(2*A)*[(y2-y3) 0 (y3-y1) 0 (y1-y2) 0; 0 (x3-x2) 0 (x1-x3) 0 (x2-x1); (x3-x2) (y2-y3) (x1-x3) (y3-y1) (x2-x1) (y1-y2)];
 k = t*A*B'*D*B;
 disp(k);
+
+%% global stiffness matrix
+totnode = (nx+1)*(ny+1);
+temp = k;
+K = zeros(totnode);
+
+for i = 1:size(element,1)
+    m(1) = (2*element(i,1))-1;
+    m(2) = (2*element(i,1));
+    m(3) = (2*element(i,2))-1;
+    m(4) = (2*element(i,2));
+    m(5) = (2*element(i,3))-1;
+    m(6) = (2*element(i,3));
+    for r = 1:6
+        for c = 1:6
+            K(m(r),m(c)) = K(m(r)+m(c)) + temp(r,c);
+        end
+    end
+end       
+
+%% Displacement of each node
+count1 = 1;
+%K1 = K ;
+%load1 = load ;
+cnt = 1;
+for i = 1:2*totnode
+    if(q(i)==0)
+        inde(count1,1) = i; 
+        %K1(i,:) = 0;
+        %load1(i,1) = 0;
+    else
+        K1(cnt,:) = K(i,:);
+       % K1(:,cnt) = K(:,i);
+        load1(cnt,:) = load(i,:);
+        cnt = cnt +1;
+    end
+    count1 =count1 + 1;
+    %K1(i,:) = K(i,:);
+    %load1(i,1) = load(i,1);
+end
+cnt = 1;
+for i = 1:2*totnode
+    if(q(i)==0)
+       
+    else
+        K2(:,cnt) = K1(:,i);
+       % K1(:,cnt) = K(:,i);
+        cnt = cnt +1;
+    end
+
+end
+q1 = q;
+q1( ~any(q1,2), : ) = [];  % to remove element of a matix with all zero coloumn;
+inde( ~any(inde,2), : ) = [];
+%load1( ~any(load1,2), : ) = [];
+
+q1 = (inv(K2))*load1;
+% cnt=1;
+% q2 = [];
+% cnt1 = 1;
+% for i = 1: 2*totnode
+%     if(size(inde)>=cnt) 
+%         if(inde(cnt)==i)
+%             q2(i)= 0;
+%             disp(['cnt is ', num2str(cnt)]);
+%             cnt = cnt+ 1;
+%             disp(['i is ', num2str(i)]);
+%         end
+%     elseif(inde(cnt)~=i)
+%         disp(['i is ', num2str(i)]);
+%         q2(i) = q1(cnt1);
+%         disp(['cnt1 is ', num2str(cnt1)]);
+%         cnt1 = cnt1 + 1;
+%         disp(q1(cnt1));
+%     end
+%     
+% end
+a = inde;
+cnta = 1;
+cntq1 = 1;
+q2 =[];
+for i = 1 : size(q1,1) + size(a,1)
+    if (cnta <= size(a,1) && i == a(cnta))
+        q2 = [q2 ; 0];
+        cnta = cnta +1;
+    else
+        q2 = [q2 ; q1(cntq1)];
+        cntq1 = cntq1 + 1;
+        
+    end
+end
+disp(q2);
