@@ -218,3 +218,25 @@ for i = 1 : size(q1,1) + size(a,1)
     end
 end
 disp(q2);
+
+%% Strain
+
+for i = 1:2*nx*ny
+    X1 = nodal(element(i,1),1);
+    Y1 = nodal(element(i,1),2);
+    X2 = nodal(element(i,2),1);
+    Y2 = nodal(element(i,2),2);
+    X3 = nodal(element(i,3),1);
+    Y3 = nodal(element(i,3),2);
+    st1 = (Y2-Y3)*q2((2*element(i,1))-1)+(Y3-Y1)*q2((2*element(i,2))-1)+(Y1-Y2)*q2((2*element(i,3))-1);
+    st2 = (X3-X2)*q2(2*element(i,1))+(X1-X3)*q2(2*element(i,2))+(X2-X1)*q2(2*element(i,3));
+    st3 = (X3-X2)*q2((2*element(i,1))-1)+(Y2-Y3)*q2(2*element(i,1))+(X1-X3)*q2((2*element(i,2))-1)+(Y3-Y1)*q2(2*element(i,2))+(X2-X1)*q2((2*element(i,3))-1)+(Y1-Y2)*q2(2*element(i,3));
+
+    %strain(i) = 1/(2*A)[(Y2-Y3)*q2((2*element(i,1))-1)+(Y3-Y1)*q2((2*element(i,2))-1)+(Y1-Y2)*q2((2*element(i,3))-1); (X3-X2)*q2(2*element(i,1))+(X1-X3)*q2(2*element(i,2))+(X2-X1)*q2(2*element(i,3)); (X3-X2)*q2((2*element(i,1))-1)+(Y2-Y3)*q2(2*element(i,1))+(X1-X3)*q2((2*element(i,2))-1)+(Y3-Y1)*q2(2*element(i,2))+(X2-X1)*q2((2*element(i,3))-1)+(Y1-Y2)*q2(2*element(i,3))];
+    strain(:,i) = [st1; st2;st3];
+    %strain(2,i) = st2;
+    %strain(3,i) = st3;
+    
+    stress(:,i) = D*strain(:,i);
+end
+    
