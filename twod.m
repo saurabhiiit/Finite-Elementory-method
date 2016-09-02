@@ -239,4 +239,6 @@ for i = 1:2*nx*ny
     
     stress(:,i) = D*strain(:,i);
 end
+disp(strain);
+disp(stress);
     
